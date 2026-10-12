@@ -32,7 +32,8 @@ export default function Hero() {
   const canvasRef = useRef(null)
   const copyRef = useRef(null)
   // Shared with the canvas; mutated per frame, never triggers renders.
-  const motion = useRef({ p: 0, dock: { cx: 60, cy: 50, h: 46 } })
+  // `flight` is the scroll distance (px) of the whole fly-to-dock transition.
+  const motion = useRef({ p: 0, flight: 0, dock: { cx: 60, cy: 50, h: 46 } })
 
   useEffect(() => {
     setWebgl(supportsWebGL())
@@ -48,7 +49,8 @@ export default function Hero() {
     }
     const update = () => {
       const h = heroRef.current?.offsetHeight || window.innerHeight
-      const p = clamp01(window.scrollY / (h * FLIGHT))
+      motion.current.flight = h * FLIGHT
+      const p = clamp01(window.scrollY / motion.current.flight)
       motion.current.p = p
       if (slotRef.current) slotRef.current.style.opacity = clamp01((p - SVG_FADE[0]) / (SVG_FADE[1] - SVG_FADE[0]))
       // Hero copy leaves as the mark takes off, so it never scrolls under the brand bar.

@@ -71,7 +71,13 @@ p {
    over .brand__mark once scrolled. Hidden by Hero.jsx when docked. */
 .glass-layer {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  /* Large-viewport height: mobile browser bars showing/hiding no longer
+     resize (and reallocate) the WebGL canvas mid-scroll. */
+  height: 100vh;
+  height: 100lvh;
   z-index: 40;
   pointer-events: none;
 }
@@ -98,10 +104,12 @@ p {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 28px var(--rail-left);
+  padding: 20px var(--rail-left);
   font-size: 0.95rem;
   letter-spacing: 0.01em;
   pointer-events: none;
+  /* Solid so page text scrolls under it cleanly instead of through it. */
+  background: var(--cream);
 }
 .brand a,
 .brand span {
@@ -334,6 +342,12 @@ p {
   line-height: 1.05;
   display: block;
   margin-bottom: 0.25em;
+}
+.people__degree {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--navy-muted);
+  margin-bottom: 0.35em;
 }
 .people__line {
   font-size: calc(var(--body) * 0.85);

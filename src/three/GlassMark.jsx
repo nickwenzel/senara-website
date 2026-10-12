@@ -34,6 +34,15 @@ const REST = { x: -0.12, y: 0.3 }
 // last stretch (see Hero.jsx) so the hand-off is invisible.
 const MATERIAL_FADE = [0.68, 0.94]
 
+// Phones and tablets: no hover, coarse pointer, or a narrow screen. They get a
+// lighter render (fewer pixels, samples and vertices) and no pointer tilt.
+const TOUCH =
+  typeof window !== 'undefined' && window.matchMedia('(hover: none), (pointer: coarse)').matches
+const COMPACT = TOUCH || (typeof window !== 'undefined' && window.innerWidth < 900)
+const QUALITY = COMPACT
+  ? { dpr: 1, buffer: 256, samples: 3, curve: 28, bevel: 4, aberration: 0.03, blur: 0.1 }
+  : { dpr: 1.25, buffer: 512, samples: 4, curve: 56, bevel: 8, aberration: 0.06, blur: 0.2 }
+
 const easeOutExpo = (t) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t))
 const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 const clamp01 = (v) => Math.min(1, Math.max(0, v))
@@ -58,8 +67,8 @@ function useMarkGeometries() {
           bevelEnabled: true,
           bevelThickness: 10,
           bevelSize: 8,
-          bevelSegments: 8,
-          curveSegments: 56,
+          bevelSegments: QUALITY.bevel,
+          curveSegments: QUALITY.curve,
         })
         geo.center()
         return geo
@@ -79,14 +88,18 @@ function useMarkGeometries() {
 }
 
 // Hero pose: how far right the mark sits (0 on tall viewports, 1 on wide) and
-// how tall it is. Tall viewports lift it so the headline below stays clear.
+// how big it is. Size is capped by both viewport height and width, so on a
+// phone it fits comfortably above the headline instead of overflowing.
+const SVG_WIDTH = 202
 function heroPose(viewport) {
   const aspect = viewport.width / viewport.height
   const wide = clamp01((aspect - 0.9) / 0.5)
+  const maxH = viewport.height * (0.62 - 0.3 * (1 - wide)) // 62% wide, 32% tall
+  const maxW = viewport.width * (0.4 + 0.12 * (1 - wide)) // 40% wide, 52% tall
   return {
     x: viewport.width * 0.21 * wide,
-    y: viewport.height * 0.14 * (1 - wide),
-    scale: (viewport.height * (0.62 - 0.08 * (1 - wide))) / SVG_HEIGHT,
+    y: viewport.height * 0.15 * (1 - wide),
+    scale: Math.min(maxH / SVG_HEIGHT, maxW / SVG_WIDTH),
   }
 }
 
@@ -102,7 +115,13 @@ function Scene({ motion, reducedMotion }) {
 
   // One shared transmission buffer for all three pieces. Left to itself,
   // MeshTransmissionMaterial re-renders the scene once per mesh per frame.
-  const buffer = useFBO(512, 512, { type: THREE.HalfFloatType })
+  const buffer = useFBO(QUALITY.buffer, QUALITY.buffer, { type: THREE.HalfFloatType })
+  // The backdrop and camera never move, so the refraction source only needs
+  // rendering when the viewport changes, not every frame.
+  const bufferDirty = useRef(true)
+  useEffect(() => {
+    bufferDirty.current = true
+  }, [viewport.width, viewport.height])
 
   // Scratch objects, allocated once.
   const tmp = useMemo(
@@ -125,7 +144,10 @@ function Scene({ motion, reducedMotion }) {
     if (start.current === null) start.current = t
     const elapsed = t - start.current
 
-    const p = motion.current.p
+    // Scroll progress, read on the render frame itself (not from the last
+    // scroll event) so the mark never trails the page by a frame.
+    const m = motion.current
+    const p = m.flight > 0 ? clamp01(window.scrollY / m.flight) : m.p
     const e = easeInOutCubic(p)
     const live = 1 - e // how much "hero" behaviour is still in play
 
@@ -133,8 +155,9 @@ function Scene({ motion, reducedMotion }) {
     const settle = reducedMotion ? 1 : easeOutExpo(clamp01(elapsed / 2.4))
 
     // --- pose: hero -------------------------------------------------------
-    const px = reducedMotion ? 0 : state.pointer.x
-    const py = reducedMotion ? 0 : state.pointer.y
+    const tilt = reducedMotion || TOUCH ? 0 : 1
+    const px = state.pointer.x * tilt
+    const py = state.pointer.y * tilt
     const float = reducedMotion ? 0 : 1
     const heroRotX = (1 - settle) * 0.9 + REST.x - py * 0.2 + Math.sin(t * 0.45) * 0.03 * float
     const heroRotY = (1 - settle) * -1.3 + REST.y + px * 0.3 + Math.cos(t * 0.35) * 0.03 * float
@@ -192,9 +215,10 @@ function Scene({ motion, reducedMotion }) {
       mat.emissive.lerpColors(tmp.black, tmp.flats[i], f)
     })
 
-    // Refraction source: backdrop only, rendered once into the shared buffer.
-    // The main pass then draws just the glass on a transparent canvas.
-    if (backdrop.current) {
+    // Refraction source: backdrop only, rendered into the shared buffer when
+    // the viewport changes. The main pass draws just the glass, transparently.
+    if (backdrop.current && bufferDirty.current) {
+      bufferDirty.current = false
       backdrop.current.visible = true
       rig.current.visible = false
       state.gl.setRenderTarget(buffer)
@@ -249,8 +273,8 @@ function Scene({ motion, reducedMotion }) {
                 thickness={1.4}
                 roughness={0.05}
                 ior={1.5}
-                chromaticAberration={0.06}
-                anisotropicBlur={0.2}
+                chromaticAberration={QUALITY.aberration}
+                anisotropicBlur={QUALITY.blur}
                 distortion={0.25}
                 distortionScale={0.4}
                 temporalDistortion={0.08}
@@ -263,7 +287,7 @@ function Scene({ motion, reducedMotion }) {
                 iridescenceIOR={1.3}
                 iridescenceThicknessRange={[120, 420]}
                 envMapIntensity={1.2}
-                samples={4}
+                samples={QUALITY.samples}
               />
             </mesh>
           ))}
@@ -295,7 +319,7 @@ export default function GlassMark({ motion, reducedMotion = false, active = true
       // first measurement be dropped on load, leaving the canvas at 300x150.
       resize={{ scroll: false, debounce: 0 }}
       flat // no tone mapping: flat colours land exactly on brand values
-      dpr={[1, 1.25]} // transmission cost scales with pixels
+      dpr={[1, QUALITY.dpr]} // transmission cost scales with pixels
       camera={{ position: [0, 0, 7], fov: 32 }}
       gl={{ antialias: true, alpha: true, premultipliedAlpha: true, powerPreference: 'high-performance' }}
       onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}

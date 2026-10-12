@@ -14,7 +14,14 @@ export default function Footer() {
           {footer.sources.map((s) => (
             <li key={s.n}>
               <span>{s.n}</span>
-              <span>{s.text}</span>
+              <span>
+                {s.text}{' '}
+                {s.url && (
+                  <a href={s.url} target="_blank" rel="noreferrer">
+                    Source
+                  </a>
+                )}
+              </span>
             </li>
           ))}
         </ol>

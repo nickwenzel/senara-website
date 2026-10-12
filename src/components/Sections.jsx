@@ -59,6 +59,7 @@ export function Team() {
         {team.members.map((m) => (
           <li key={m.name}>
             <span className="people__name">{m.name}</span>
+            <span className="people__degree">{m.degree}</span>
             <span className="people__line">{m.line}</span>
           </li>
         ))}

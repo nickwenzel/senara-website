@@ -1,18 +1,29 @@
 import { useEffect, useState } from 'react'
 import { nav } from '../content.js'
 
-// Fixed left-hand section list. Hidden while the hero is on screen; the
-// current section is navy, the rest muted.
+// Fixed left-hand section list. Hidden while the hero or the footer is on
+// screen (it would sit over the footer text); the current section is navy,
+// the rest muted.
 export default function Rail() {
   const [active, setActive] = useState(null)
-  const [visible, setVisible] = useState(false)
+  const [pastHero, setPastHero] = useState(false)
+  const [atFooter, setAtFooter] = useState(false)
+  const visible = pastHero && !atFooter
 
   useEffect(() => {
     const hero = document.getElementById('top')
-    const heroObs = new IntersectionObserver(([e]) => setVisible(e.intersectionRatio < 0.35), {
+    const heroObs = new IntersectionObserver(([e]) => setPastHero(e.intersectionRatio < 0.35), {
       threshold: [0, 0.35, 1],
     })
     if (hero) heroObs.observe(hero)
+
+    // Hide once the footer reaches the rail's vertical band (mid-viewport).
+    const footer = document.querySelector('.footer')
+    const footerObs = new IntersectionObserver(([e]) => setAtFooter(e.isIntersecting), {
+      rootMargin: '0px 0px -40% 0px',
+      threshold: 0,
+    })
+    if (footer) footerObs.observe(footer)
 
     const sections = nav.map((n) => document.getElementById(n.id)).filter(Boolean)
     const obs = new IntersectionObserver(
@@ -29,6 +40,7 @@ export default function Rail() {
     sections.forEach((s) => obs.observe(s))
     return () => {
       heroObs.disconnect()
+      footerObs.disconnect()
       obs.disconnect()
     }
   }, [])
