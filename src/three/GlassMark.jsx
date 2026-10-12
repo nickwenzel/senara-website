@@ -245,7 +245,7 @@ function heroPose(viewport) {
   const maxW = viewport.width * (0.4 + 0.12 * (1 - wide)) // 40% wide, 52% tall
   return {
     x: viewport.width * 0.21 * wide,
-    y: viewport.height * 0.15 * (1 - wide),
+    y: viewport.height * 0.19 * (1 - wide), // phones: sit high, leave room for the headline
     scale: Math.min(maxH / SVG_HEIGHT, maxW / SVG_WIDTH),
   }
 }

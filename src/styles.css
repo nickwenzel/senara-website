@@ -465,10 +465,17 @@ p {
     transform: translate(-50%, -50%);
   }
   .hero__copy {
-    bottom: 6vh;
+    /* Low in the hero, clear of the logo above; the safe-area inset keeps it
+       above the home indicator on notched phones. */
+    bottom: calc(3vh + env(safe-area-inset-bottom, 0px));
   }
   .hero__scroll {
     display: none;
+  }
+  /* Hanging punctuation needs room to hang into; the 16px phone gutter has
+     none, so align the opening quote mark with the text instead. */
+  .quote p {
+    text-indent: 0;
   }
   .rail {
     position: sticky;
