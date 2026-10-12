@@ -25,21 +25,27 @@ const DISC = { cx: 142.79, cy: 148.14, r: 36.42 }
 
 // Banner gradient stops (sRGB, interpolated in sRGB like SVG).
 const rgb = (hex) => new THREE.Vector3(...[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255))
+// Entrance: every piece makes ONE smooth move from `from` (offset) and `rot`
+// to rest, all starting together on one shared curve (see ENTRANCE). Offsets
+// are in the mark's local frame (y-flipped group): +x right, +y DOWN the
+// screen, -z TOWARD the camera. `z` is the resting depth: the head (z 84)
+// sits fully in front of the crescent, whose bevel otherwise grazes it
+// (5.1 units apart, bevel 6), with margin for the idle drift.
 const PIECES = [
   {
     // archG: x1 0 y1 0 → x2 1 y2 1
     stops: ['#5b6b86', '#2d3d56', '#243247'], mid: 0.55, start: [0, 0], dir: [1, 1],
-    flat: '#243247', from: [-95, 80, -40], rot: [0.5, -0.8, 0.3], delay: 0.0, z: 0,
+    flat: '#243247', from: [-60, 50, -30], rot: [0.4, -0.5, 0.2], z: 0,
   },
   {
     // terraG: x1 .1 y1 0 → x2 .9 y2 1
     stops: ['#eba783', '#d27448', '#b9572f'], mid: 0.5, start: [0.1, 0], dir: [0.8, 1],
-    flat: '#c6643b', from: [85, -75, 25], rot: [-0.6, 0.7, -0.4], delay: 0.18, z: 26,
+    flat: '#c6643b', from: [70, 60, -60], rot: [-0.4, 0.5, -0.3], z: 26,
   },
   {
     // discG: radial, centre (.36, .32), r .75
     stops: ['#f6c3a5', '#dd8358', '#bd5a31'], mid: 0.45, start: [0, 0], dir: [1, 1],
-    flat: '#c6643b', from: [40, 105, 65], rot: [0.9, 0.2, 0.8], delay: 0.36, z: 52,
+    flat: '#c6643b', from: [25, -115, -55], rot: [0, 0, 0], z: 84,
   },
 ]
 
@@ -87,7 +93,13 @@ const COMPACT = TOUCH || (typeof window !== 'undefined' && window.innerWidth < 9
 const DETAIL = COMPACT ? { curve: 40, bevel: 5, sphere: [56, 40] } : { curve: 64, bevel: 8, sphere: [96, 64] }
 const BEVEL = 6 // bevelSize in SVG units; the outline grows by this much
 
-const easeOutExpo = (t) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t))
+const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3)
+
+// One gesture: the pieces' moves and the whole mark's settle share this
+// duration and curve; the layer fades in over the first FADE_IN seconds so
+// nothing pops in at its starting position.
+const ENTRANCE = 1.9
+const FADE_IN = 0.35
 const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 const clamp01 = (v) => Math.min(1, Math.max(0, v))
 const range = (v, [a, b]) => clamp01((v - a) / (b - a))
@@ -299,8 +311,20 @@ function Scene({ motion, reducedMotion }) {
 
   useFrame((state, delta) => {
     if (!rig.current || !materials) return
-    const t = state.clock.getElapsedTime()
-    if (start.current === null) start.current = t
+    // Page time, not state.clock: R3F stops the clock and zeroes elapsedTime
+    // whenever the frameloop pauses (it does while docked) or resumes, which
+    // would replay the entrance (hidden, then fading in) on scrolling back up.
+    const t = performance.now() / 1000
+    if (start.current === null) {
+      // Wait for the intro to release the page before flying in. The layer is
+      // hidden but still renders, so shaders are compiled before it appears.
+      if (!motion.current.go) {
+        if (motion.current.layer) motion.current.layer.style.opacity = '0'
+        if (motion.current.ripples) motion.current.ripples.style.opacity = '0'
+        return
+      }
+      start.current = t
+    }
     const elapsed = t - start.current
 
     // Scroll progress, read on the render frame, then eased (frame-rate
@@ -315,21 +339,25 @@ function Scene({ motion, reducedMotion }) {
 
     // Hand-off: the flat mark fades in under the arriving 3D one, then takes over.
     if (m.slot) m.slot.style.opacity = range(p, SVG_FADE)
-    if (m.layer) m.layer.style.opacity = 1 - range(p, LAYER_FADE)
+    const appear = reducedMotion ? 1 : clamp01(elapsed / FADE_IN)
+    if (m.layer) m.layer.style.opacity = (1 - range(p, LAYER_FADE)) * appear
     if (p >= 1 && target >= 1) m.onDock?.()
     const e = easeInOutCubic(p)
     const live = 1 - e // how much "hero" behaviour is still in play
 
-    // Settle on load: whole mark eases from a strong tilt to its rest pose.
-    const settle = reducedMotion ? 1 : easeOutExpo(clamp01(elapsed / 2.4))
+    // Settle on load: the whole mark eases into its rest pose on the same
+    // curve as the pieces' moves, so it reads as one gesture.
+    const settle = reducedMotion ? 1 : easeOutCubic(clamp01(elapsed / ENTRANCE))
 
     // --- pose: hero -------------------------------------------------------
     const tilt = reducedMotion || TOUCH ? 0 : 1
     const px = state.pointer.x * tilt
     const py = state.pointer.y * tilt
     const float = reducedMotion ? 0 : DRIFT_AMOUNT
-    const heroRotX = (1 - settle) * 0.9 + REST.x - py * 0.2 + wave(t, DRIFT.rotX) * float
-    const heroRotY = (1 - settle) * -1.3 + REST.y + px * 0.3 + wave(t, DRIFT.rotY) * float
+    // Settle: a gentle turn into the rest pose. Kept small so the pieces'
+    // held-in-front offsets don't swing sideways (and off screen) as it turns.
+    const heroRotX = (1 - settle) * 0.35 + REST.x - py * 0.2 + wave(t, DRIFT.rotX) * float
+    const heroRotY = (1 - settle) * -0.5 + REST.y + px * 0.3 + wave(t, DRIFT.rotY) * float
     const heroRotZ = wave(t, DRIFT.rotZ) * float
     const heroX = hero.x + wave(t, DRIFT.posX) * viewport.width * float
     const heroY = hero.y + wave(t, DRIFT.posY) * viewport.height * float
@@ -364,8 +392,7 @@ function Scene({ motion, reducedMotion }) {
     pieces.current.forEach((mesh, i) => {
       if (!mesh) return
       const pc = PIECES[i]
-      const k = reducedMotion ? 1 : easeOutExpo(clamp01((elapsed - pc.delay) / 2.0))
-      const off = (1 - k) * live
+      const off = (1 - settle) * live
       const dr = DRIFT.pieces[i]
       const bob = live * float
       mesh.position.set(

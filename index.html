@@ -9,6 +9,20 @@
       content="Senara Medical is a Melbourne medtech company working toward the first direct, real-time measure of oxygen in an unborn baby's brain."
     />
     <meta name="theme-color" content="#FDF6E7" />
+    <script>
+      // Decide on the load-in before anything paints (see src/components/Intro.jsx):
+      // once per session, never for reduced motion, deep links or a restored scroll.
+      try {
+        if (
+          !sessionStorage.getItem('senara-intro') &&
+          !matchMedia('(prefers-reduced-motion: reduce)').matches &&
+          !location.hash &&
+          window.scrollY === 0
+        ) {
+          document.documentElement.classList.add('is-intro', 'is-hold')
+        }
+      } catch (e) {}
+    </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="alternate icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { hero, site } from '../content.js'
+import Intro from './Intro.jsx'
 
 const GlassMark = lazy(() => import('../three/GlassMark.jsx'))
 
@@ -73,11 +74,13 @@ export default function Hero() {
   const copyRef = useRef(null)
   const ripplesRef = useRef(null)
   const brandRef = useRef(null)
+  const nameRef = useRef(null) // the brand-bar wordmark the intro lands on
   // Shared with the canvas; mutated per frame, never triggers renders.
   // `flight` is the scroll distance (px) of the whole fly-to-dock transition.
   // The canvas eases its own progress toward the scroll position and owns the
   // hand-off to the flat mark (`slot`, `onDock`) once it has actually arrived.
-  const motion = useRef({ p: 0, flight: 0, dock: { cx: 60, cy: 50, h: 46 }, slot: null, onDock: null, ready: false })
+  // `go` is set when the intro has landed; the 3D mark waits for it.
+  const motion = useRef({ p: 0, flight: 0, dock: { cx: 60, cy: 50, h: 46 }, slot: null, onDock: null, ready: false, go: false })
 
   useEffect(() => {
     setWebgl(supportsWebGL())
@@ -140,10 +143,12 @@ export default function Hero() {
       <div className="brand" ref={brandRef}>
         <a href="#top" className="brand__lockup">
           <img ref={slotRef} className="brand__mark" src={`${base}logo/senara-mark.svg`} alt="" style={{ opacity: webgl ? 0 : 1 }} />
-          <span>{site.name}</span>
+          <span ref={nameRef}>{site.name}</span>
         </a>
         <span className="brand__meta">{site.location}</span>
       </div>
+
+      <Intro targetRef={nameRef} onDone={() => (motion.current.go = true)} />
 
       {webgl && <Ripples innerRef={ripplesRef} />}
 
