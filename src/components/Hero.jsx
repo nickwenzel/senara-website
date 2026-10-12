@@ -10,7 +10,7 @@ const base = import.meta.env.BASE_URL
 const FLIGHT = 0.75
 // The flat SVG in the brand bar fades in over this window of progress, under
 // the arriving glass mark, so the swap at p = 1 is invisible.
-const SVG_FADE = [0.82, 1]
+const SVG_FADE = [0.76, 0.92] // keep in step with GlassMark.jsx
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v))
 
@@ -33,7 +33,9 @@ export default function Hero() {
   const copyRef = useRef(null)
   // Shared with the canvas; mutated per frame, never triggers renders.
   // `flight` is the scroll distance (px) of the whole fly-to-dock transition.
-  const motion = useRef({ p: 0, flight: 0, dock: { cx: 60, cy: 50, h: 46 } })
+  // The canvas eases its own progress toward the scroll position and owns the
+  // hand-off to the flat mark (`slot`, `onDock`) once it has actually arrived.
+  const motion = useRef({ p: 0, flight: 0, dock: { cx: 60, cy: 50, h: 46 }, slot: null, onDock: null, ready: false })
 
   useEffect(() => {
     setWebgl(supportsWebGL())
@@ -42,7 +44,17 @@ export default function Hero() {
     const onMotion = (e) => setReducedMotion(e.matches)
     mq.addEventListener('change', onMotion)
 
-    let wasDocked = null
+    let wasDocked = false
+    const setLayer = (isDocked) => {
+      if (isDocked === wasDocked) return
+      wasDocked = isDocked
+      if (canvasRef.current) canvasRef.current.style.visibility = isDocked ? 'hidden' : 'visible'
+      if (isDocked && slotRef.current) slotRef.current.style.opacity = 1
+      setDocked(isDocked)
+    }
+    motion.current.slot = slotRef.current
+    motion.current.layer = canvasRef.current
+    motion.current.onDock = () => setLayer(true)
     const measure = () => {
       const r = slotRef.current?.getBoundingClientRect()
       if (r) motion.current.dock = { cx: r.left + r.width / 2, cy: r.top + r.height / 2, h: r.height }
@@ -52,15 +64,14 @@ export default function Hero() {
       motion.current.flight = h * FLIGHT
       const p = clamp01(window.scrollY / motion.current.flight)
       motion.current.p = p
-      if (slotRef.current) slotRef.current.style.opacity = clamp01((p - SVG_FADE[0]) / (SVG_FADE[1] - SVG_FADE[0]))
-      // Hero copy leaves as the mark takes off, so it never scrolls under the brand bar.
-      if (copyRef.current) copyRef.current.style.opacity = 1 - clamp01((p - 0.25) / 0.45)
-      const isDocked = p >= 1
-      if (isDocked !== wasDocked) {
-        wasDocked = isDocked
-        if (canvasRef.current) canvasRef.current.style.visibility = isDocked ? 'hidden' : 'visible'
-        setDocked(isDocked)
+      // Until the 3D chunk is running, the flat mark tracks scroll directly.
+      if (!motion.current.ready && slotRef.current) {
+        slotRef.current.style.opacity = clamp01((p - SVG_FADE[0]) / (SVG_FADE[1] - SVG_FADE[0]))
       }
+      // Hero copy is page content: it fades with the raw scroll position.
+      if (copyRef.current) copyRef.current.style.opacity = 1 - clamp01((p - 0.25) / 0.45)
+      // Leaving the dock is immediate; arriving is signalled by the canvas.
+      if (p < 1) setLayer(false)
     }
     const onResize = () => {
       measure()

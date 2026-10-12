@@ -31,8 +31,17 @@ const PIECES = [
 const REST = { x: -0.12, y: 0.3 }
 
 // Glass → flat happens in this window of p; the flat SVG fades in over the
-// last stretch (see Hero.jsx) so the hand-off is invisible.
+// last stretch so the hand-off is invisible.
 const MATERIAL_FADE = [0.68, 0.94]
+// Crossfade at the dock: the crisp flat SVG fades in underneath first, then
+// the (lower-resolution) WebGL layer fades out over it. No hard swap.
+const SVG_FADE = [0.76, 0.92]
+const LAYER_FADE = [0.86, 1]
+
+// The mark eases toward the scroll position instead of being locked to it.
+// iOS Safari draws WebGL at 60 Hz while ProMotion scrolls the page at 120 Hz;
+// a hard lock makes the mark visibly step against the text. Higher = tighter.
+const FOLLOW = 10
 
 // Phones and tablets: no hover, coarse pointer, or a narrow screen. They get a
 // lighter render (fewer pixels, samples and vertices) and no pointer tilt.
@@ -138,16 +147,26 @@ function Scene({ motion, reducedMotion }) {
     [],
   )
 
-  useFrame((state) => {
+  useFrame((state, delta) => {
     if (!rig.current) return
     const t = state.clock.getElapsedTime()
     if (start.current === null) start.current = t
     const elapsed = t - start.current
 
-    // Scroll progress, read on the render frame itself (not from the last
-    // scroll event) so the mark never trails the page by a frame.
+    // Scroll progress, read on the render frame, then eased (frame-rate
+    // independent) so motion stays continuous at whatever rate frames land.
     const m = motion.current
-    const p = m.flight > 0 ? clamp01(window.scrollY / m.flight) : m.p
+    const target = m.flight > 0 ? clamp01(window.scrollY / m.flight) : m.p
+    if (!m.ready || reducedMotion) m.smooth = target
+    else m.smooth = THREE.MathUtils.damp(m.smooth, target, FOLLOW, Math.min(delta, 1 / 30))
+    if (Math.abs(m.smooth - target) < 0.0005) m.smooth = target
+    m.ready = true
+    const p = m.smooth
+
+    // Hand-off: the flat mark fades in under the arriving glass, then takes over.
+    if (m.slot) m.slot.style.opacity = range(p, SVG_FADE)
+    if (m.layer) m.layer.style.opacity = 1 - range(p, LAYER_FADE)
+    if (p >= 1 && target >= 1) m.onDock?.()
     const e = easeInOutCubic(p)
     const live = 1 - e // how much "hero" behaviour is still in play
 
@@ -221,9 +240,17 @@ function Scene({ motion, reducedMotion }) {
       bufferDirty.current = false
       backdrop.current.visible = true
       rig.current.visible = false
+      // Clear to opaque cream, not the canvas's transparent black: the glass
+      // samples this buffer wherever it travels, including past the backdrop
+      // plane's edges on the way to the dock.
+      state.gl.getClearColor(tmp.color)
+      const alpha = state.gl.getClearAlpha()
       state.gl.setRenderTarget(buffer)
+      state.gl.setClearColor(CREAM, 1)
+      state.gl.clear()
       state.gl.render(state.scene, state.camera)
       state.gl.setRenderTarget(null)
+      state.gl.setClearColor(tmp.color, alpha)
       backdrop.current.visible = false
       rig.current.visible = true
     }

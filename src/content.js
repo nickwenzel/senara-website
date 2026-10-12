@@ -67,7 +67,7 @@ export const team = {
     { name: 'Kai Heinemann', degree: 'Master of Biomedical Engineering', line: 'Software and data analysis, CAD prototyping and benchtop verification.' },
     { name: 'Jac Simpkin', degree: 'Master of Business Administration', line: 'Intellectual property, commercial agreements and regulatory compliance.' },
     { name: 'Jerry Wang', degree: 'Master of Business Administration', line: 'Clinical practice, the Australian health system and reimbursement.' },
-    { name: 'Nick Wenzel', degree: 'Master of Biomedical Engineering', line: 'Software and data analysis, user interface design and surgical workflows.' },
+    { name: 'Nick Wenzel', degree: 'Master of Biomedical Engineering', line: 'Software and data analysis, user interface design and clinical integration.' },
     { name: 'Orr Zaacks', degree: 'Master of Biomedical Engineering', line: 'Physiology and pathology, laboratory R&D and quality systems.' },
   ],
 }
