@@ -1,0 +1,476 @@
+:root {
+  --cream: #fdf6e7;
+  --navy: #243247;
+  --terracotta: #c6643b;
+  --navy-muted: rgba(36, 50, 71, 0.38);
+  --navy-rule: rgba(36, 50, 71, 0.18);
+
+  --serif: 'Instrument Serif', 'Source Serif 4', Georgia, serif;
+  --sans: 'Instrument Sans', 'Inter', system-ui, -apple-system, sans-serif;
+
+  --rail-left: 5vw;
+  --col-left: 38vw;
+  --col-width: 36rem;
+  --gutter: 20px;
+
+  --body: clamp(1.2rem, 1.1rem + 0.6vw, 1.5rem);
+  --display: clamp(2.6rem, 1.4rem + 5.2vw, 6rem);
+  --h2: clamp(2.2rem, 1.4rem + 3vw, 4rem);
+  --stat: clamp(2.6rem, 1.6rem + 3.6vw, 4.6rem);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--navy);
+  font-family: var(--sans);
+  font-size: var(--body);
+  line-height: 1.35;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--navy-rule);
+  transition: border-color 0.2s ease;
+}
+a:hover {
+  border-bottom-color: var(--navy);
+}
+
+p {
+  margin: 0 0 1.1em;
+}
+
+::selection {
+  background: var(--terracotta);
+  color: var(--cream);
+}
+
+/* ---------- hero ---------- */
+
+.hero {
+  position: relative;
+  height: 100svh;
+  min-height: 560px;
+  overflow: hidden;
+}
+
+/* Full-viewport transparent WebGL layer. The glass mark lives here and is
+   positioned entirely by scroll progress: hero on the landing screen, parked
+   over .brand__mark once scrolled. Hidden by Hero.jsx when docked. */
+.glass-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+.glass-layer canvas {
+  display: block;
+}
+
+.hero__fallback {
+  position: absolute;
+  right: 8vw;
+  top: 50%;
+  width: min(32vw, 360px);
+  transform: translateY(-50%);
+}
+
+/* ---------- brand bar (fixed) ---------- */
+
+.brand {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28px var(--rail-left);
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+}
+.brand a,
+.brand span {
+  pointer-events: auto;
+  border: 0;
+}
+/* Mark from the kit + wordmark set live in Instrument Sans (the SVG lockup
+   carries the Source Serif wordmark as outlines, which reads too Times-like
+   at nav size). */
+.brand__lockup {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 1.35rem;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  line-height: 1;
+}
+.brand__mark {
+  height: 46px;
+  width: auto;
+  display: block;
+  /* Opacity is scrubbed by Hero.jsx as the glass mark arrives. */
+}
+
+.hero__copy {
+  position: absolute;
+  left: var(--rail-left);
+  right: var(--rail-left);
+  bottom: 9vh;
+  max-width: 44rem;
+  pointer-events: none;
+}
+.hero__copy > * {
+  pointer-events: auto;
+}
+
+.hero__headline {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: var(--display);
+  line-height: 0.98;
+  letter-spacing: -0.015em;
+  margin: 0 0 0.5em;
+}
+.hero__headline em {
+  font-style: italic;
+  color: var(--terracotta);
+}
+
+.hero__sub {
+  max-width: 30rem;
+  margin: 0;
+  color: var(--navy);
+}
+
+.hero__scroll {
+  position: absolute;
+  right: var(--rail-left);
+  bottom: 9vh;
+  font-size: 0.85rem;
+  color: var(--navy-muted);
+  border: 0;
+}
+
+/* staged entrance of hero text — matches the glass settle */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: reveal 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+.reveal--1 { animation-delay: 1.1s; }
+.reveal--2 { animation-delay: 1.4s; }
+.reveal--3 { animation-delay: 1.7s; }
+@keyframes reveal {
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- rail nav ---------- */
+
+.rail {
+  position: fixed;
+  left: var(--rail-left);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  font-size: 1.05rem;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+.rail.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.rail a {
+  border: 0;
+  color: var(--navy-muted);
+  transition: color 0.3s ease;
+}
+.rail a.is-active,
+.rail a:hover {
+  color: var(--navy);
+}
+
+/* ---------- content sections ---------- */
+
+.section {
+  padding: 18vh 0 10vh;
+  margin-left: var(--col-left);
+  margin-right: var(--rail-left);
+  max-width: var(--col-width);
+  scroll-margin-top: 10vh;
+}
+
+.section__heading {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: var(--h2);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.9em;
+}
+
+.section__lede {
+  font-size: calc(var(--body) * 1.12);
+}
+
+.quote {
+  margin: 1.6em 0;
+  padding: 0;
+  border: 0;
+}
+.quote p {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: calc(var(--body) * 1.45);
+  line-height: 1.15;
+  margin: 0 0 0.5em;
+  text-indent: -0.4em;
+}
+.quote cite {
+  font-style: normal;
+  font-size: 0.9rem;
+  color: var(--navy-muted);
+}
+
+.stats {
+  list-style: none;
+  padding: 0;
+  margin: 2.4em 0 2.6em;
+}
+.stats li {
+  padding: 1em 0;
+  border-top: 1px solid var(--navy-rule);
+}
+.stats li:last-child {
+  border-bottom: 1px solid var(--navy-rule);
+}
+.stats__value {
+  display: block;
+  font-family: var(--serif);
+  font-size: var(--stat);
+  line-height: 1;
+  letter-spacing: -0.015em;
+  margin-bottom: 0.18em;
+}
+.stats__value sup {
+  font-family: var(--sans);
+  font-size: 0.32em;
+  color: var(--navy-muted);
+  margin-left: 0.3em;
+  vertical-align: 1.6em;
+}
+.stats__label {
+  display: block;
+  font-size: calc(var(--body) * 0.85);
+  color: var(--navy);
+  max-width: 28rem;
+}
+
+.subhead {
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--navy-muted);
+  margin: 2.6em 0 1em;
+}
+
+.values {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.values li {
+  display: grid;
+  grid-template-columns: 9.5rem 1fr;
+  gap: 1.2rem;
+  padding: 0.75em 0;
+  border-top: 1px solid var(--navy-rule);
+  font-size: calc(var(--body) * 0.85);
+}
+.values li:last-child {
+  border-bottom: 1px solid var(--navy-rule);
+}
+.values__name {
+  font-family: var(--serif);
+  font-size: calc(var(--body) * 1.1);
+  line-height: 1.1;
+}
+
+.people {
+  list-style: none;
+  padding: 0;
+  margin: 2em 0 0;
+}
+.people li {
+  padding: 1em 0;
+  border-top: 1px solid var(--navy-rule);
+}
+.people li:last-child {
+  border-bottom: 1px solid var(--navy-rule);
+}
+.people__name {
+  font-family: var(--serif);
+  font-size: calc(var(--body) * 1.5);
+  line-height: 1.05;
+  display: block;
+  margin-bottom: 0.25em;
+}
+.people__line {
+  font-size: calc(var(--body) * 0.85);
+  color: var(--navy);
+  max-width: 30rem;
+}
+
+.contact__links {
+  margin-top: 1.5em;
+  font-family: var(--serif);
+  font-size: calc(var(--body) * 1.5);
+  line-height: 1.3;
+}
+.contact__links a {
+  display: inline-block;
+  border-bottom-width: 1.5px;
+}
+.contact__links span {
+  display: block;
+  font-family: var(--sans);
+  font-size: calc(var(--body) * 0.8);
+  color: var(--navy-muted);
+  margin-top: 0.8em;
+}
+
+/* ---------- footer ---------- */
+
+.footer {
+  margin: 14vh var(--rail-left) 0;
+  padding: 3em 0 4em;
+  border-top: 1px solid var(--navy-rule);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  gap: 3rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--navy-muted);
+}
+.footer p {
+  margin: 0 0 1em;
+}
+.footer__mark {
+  height: 40px;
+  display: block;
+  margin-bottom: 1.4em;
+}
+.footer__sources {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.footer__sources li {
+  display: grid;
+  grid-template-columns: 1.6em 1fr;
+  margin-bottom: 0.5em;
+}
+.footer__legal {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1em;
+  margin-top: 1.5em;
+}
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 900px) {
+  :root {
+    --rail-left: 16px;
+    --col-left: 16px;
+    --col-width: 40rem;
+  }
+  .brand {
+    padding: 16px;
+    background: var(--cream);
+    height: 68px;
+  }
+  .brand__lockup {
+    font-size: 1.15rem;
+    gap: 10px;
+  }
+  .brand__mark {
+    height: 36px;
+  }
+  .brand__meta {
+    display: none;
+  }
+  .hero__fallback {
+    right: auto;
+    left: 50%;
+    top: 40%;
+    width: 50vw;
+    transform: translate(-50%, -50%);
+  }
+  .hero__copy {
+    bottom: 6vh;
+  }
+  .hero__scroll {
+    display: none;
+  }
+  .rail {
+    position: sticky;
+    top: 68px; /* below the fixed brand bar */
+    left: auto;
+    transform: none;
+    flex-direction: row;
+    gap: 1.2em;
+    padding: 14px 16px;
+    margin: 0;
+    background: var(--cream);
+    font-size: 0.95rem;
+    z-index: 5;
+  }
+  .rail.is-visible {
+    opacity: 1;
+  }
+  .section {
+    padding: 12vh 0 6vh;
+  }
+  .values li {
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+  }
+  .footer {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .reveal {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
