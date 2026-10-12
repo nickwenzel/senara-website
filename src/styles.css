@@ -85,6 +85,23 @@ p {
   display: block;
 }
 
+/* Banner ripples + blooms. 240px box = 24 disc radii at 10px each; GlassMark
+   sets translate (disc centre) and scale (disc radius / 10px) every frame.
+   Painted before the hero copy, so the text sits on top of it. */
+.ripples {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 240px;
+  height: 240px;
+  margin: -120px 0 0 -120px;
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+
 .hero__fallback {
   position: absolute;
   right: 8vw;
@@ -108,7 +125,12 @@ p {
   font-size: 0.95rem;
   letter-spacing: 0.01em;
   pointer-events: none;
-  /* Solid so page text scrolls under it cleanly instead of through it. */
+  /* Clear over the hero; solid (.is-solid, set on scroll) so page text
+     scrolls under it cleanly instead of through it. */
+  background: rgba(253, 246, 231, 0);
+  transition: background-color 0.35s ease;
+}
+.brand.is-solid {
   background: var(--cream);
 }
 .brand a,
@@ -423,7 +445,6 @@ p {
   }
   .brand {
     padding: 16px;
-    background: var(--cream);
     height: 68px;
   }
   .brand__lockup {
