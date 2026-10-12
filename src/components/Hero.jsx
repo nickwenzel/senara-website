@@ -104,6 +104,18 @@ export default function Hero() {
     const measure = () => {
       const r = slotRef.current?.getBoundingClientRect()
       if (r) motion.current.dock = { cx: r.left + r.width / 2, cy: r.top + r.height / 2, h: r.height }
+      // Free space for the hero mark on phones: brand bar bottom to headline
+      // top, in px from the top of the page (i.e. at scroll 0).
+      const bar = brandRef.current?.getBoundingClientRect()
+      const copy = copyRef.current?.getBoundingClientRect()
+      if (bar && copy) {
+        const top = bar.bottom
+        const bottom = copy.top + window.scrollY
+        const prev = motion.current.space
+        if (!prev || Math.abs(prev.top - top) > 0.5 || Math.abs(prev.bottom - bottom) > 0.5) {
+          motion.current.space = { top, bottom } // new object: GlassMark re-derives its pose
+        }
+      }
     }
     const update = () => {
       const h = heroRef.current?.offsetHeight || window.innerHeight
@@ -128,6 +140,8 @@ export default function Hero() {
     }
     measure()
     update()
+    // The headline's height depends on the web font; re-measure once it's in.
+    document.fonts?.ready.then(onResize)
     window.addEventListener('scroll', update, { passive: true })
     window.addEventListener('resize', onResize)
     return () => {

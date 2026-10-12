@@ -250,14 +250,23 @@ function useShadowTexture(mark) {
 // Hero pose: how far right the mark sits (0 on tall viewports, 1 on wide) and
 // how big it is. Size is capped by both viewport height and width, so on a
 // phone it fits comfortably above the headline instead of overflowing.
-function heroPose(viewport) {
+// On tall (phone) layouts the mark is centred in the measured gap between the
+// brand bar and the headline (`space`, CSS px from the top at scroll 0, set by
+// Hero.jsx), so it sits balanced whatever the browser chrome does.
+function heroPose(viewport, size, space) {
   const aspect = viewport.width / viewport.height
   const wide = clamp01((aspect - 0.9) / 0.5)
-  const maxH = viewport.height * (0.62 - 0.3 * (1 - wide)) // 62% wide, 32% tall
+  const pxToWorld = viewport.height / size.height
+  let maxH = viewport.height * (0.62 - 0.3 * (1 - wide)) // 62% wide, 32% tall
+  let tallY = viewport.height * 0.19
+  if (space && space.bottom > space.top) {
+    tallY = (0.5 - (space.top + space.bottom) / 2 / size.height) * viewport.height
+    maxH = Math.min(maxH, (space.bottom - space.top) * 0.78 * pxToWorld + wide * 1e9)
+  }
   const maxW = viewport.width * (0.4 + 0.12 * (1 - wide)) // 40% wide, 52% tall
   return {
     x: viewport.width * 0.21 * wide,
-    y: viewport.height * 0.19 * (1 - wide), // phones: sit high, leave room for the headline
+    y: tallY * (1 - wide),
     scale: Math.min(maxH / SVG_HEIGHT, maxW / SVG_WIDTH),
   }
 }
@@ -270,7 +279,6 @@ function Scene({ motion, reducedMotion }) {
   const pieces = useRef([])
   const start = useRef(null)
   const { viewport, size, camera } = useThree()
-  const hero = useMemo(() => heroPose(viewport), [viewport])
 
   const materials = useMemo(() => {
     if (!mark) return null
@@ -330,6 +338,8 @@ function Scene({ motion, reducedMotion }) {
     // Scroll progress, read on the render frame, then eased (frame-rate
     // independent) so motion stays continuous at whatever rate frames land.
     const m = motion.current
+    // Per frame (cheap): `m.space` can change without a React render.
+    const hero = heroPose(viewport, size, m.space)
     const target = m.flight > 0 ? clamp01(window.scrollY / m.flight) : m.p
     if (!m.ready || reducedMotion) m.smooth = target
     else m.smooth = THREE.MathUtils.damp(m.smooth, target, FOLLOW, Math.min(delta, 1 / 30))
