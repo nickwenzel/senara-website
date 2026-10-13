@@ -18,26 +18,27 @@ export const nav = [
 
 export const hero = {
   headline: ['Measuring oxygen in', 'the unborn brain.'],
-  sub: 'Senara Medical builds monitoring tools that help clinicians decide when a high-risk pregnancy must end, and when it can safely continue.',
+  sub: 'Senara Medical builds monitoring tools that help clinicians know how long a high-risk pregnancy can safely continue, and when it’s time to deliver.',
 }
 
 export const ethos = {
   heading: 'Deliver now, or wait.',
   paragraphs: [
-    'When a baby is not getting enough oxygen late in pregnancy, the clinician faces one critical decision. Deliver too early, and the baby faces prematurity and weeks in intensive care. Wait too long, and the risk is cerebral palsy, developmental delay or, in the most serious cases, stillbirth.',
-    'Fetal monitoring has not meaningfully changed in forty years. Heart-rate tracing reads a surrogate, with a false-positive rate high enough that emergency caesareans are performed on healthy babies. Doppler ultrasound reads flow in a single vessel and needs a trained sonographer. Reduced movement is noticed only once hypoxia is already chronic.',
+    'When there are concerns about a baby’s oxygen supply during pregnancy, clinicians face one of the hardest calls in medicine: how long can the pregnancy safely continue?',
+    'Deliver too early, and a baby faces the risks of prematurity and long stays in neonatal intensive care. Deliver too late, and oxygen deprivation can cause irreversible brain injury, lifelong disability or stillbirth.',
+    'Today, these decisions rest on indirect markers. Current monitoring tools have high false-positive rates, which can lead to unnecessary caesareans, and their sensitivity is limited late in pregnancy, when delivery decisions matter most.',
   ],
   quote: {
     text: 'The current tools for monitoring fetal hypoxia are appalling.',
     attribution: 'Maternal-fetal medicine specialist, Melbourne',
   },
   closing:
-    'None of them measure the one thing that actually matters: how much oxygen is reaching the baby’s brain.',
+    'No existing tool measures the one thing that actually matters: how much oxygen is reaching the baby’s brain.',
 }
 
 export const mission = {
   heading: 'Measure what matters.',
-  lede: 'Senara Medical exists to give obstetricians a direct, real-time measure of fetal brain oxygenation, so that a delivery decision rests on the baby’s brain rather than on a proxy for it.',
+  lede: 'Senara Medical exists to give obstetricians the first direct, real-time measure of fetal brain oxygenation, so that a delivery decision rests on the baby’s brain rather than on a proxy for it. Designed to fit into routine antenatal care, it lets clinicians measure what matters most and time delivery with confidence.',
   // Every figure must match its entry in footer.sources (note = source number).
   stats: [
     { value: '3 in 1,000', label: 'babies are born with neonatal encephalopathy, a disorder of brain function; in half, the cause is hypoxic-ischaemic injury', note: 1 },
@@ -45,7 +46,7 @@ export const mission = {
     { value: '1.9 million', label: 'babies are stillborn each year worldwide, one every 17 seconds', note: 3 },
     { value: 'A$5.17 billion', label: 'cost of cerebral palsy in Australia in a single year, in financial costs and lost wellbeing', note: 4 },
   ],
-  now: 'We are validating technical, clinical and commercial feasibility with maternal-fetal medicine, obstetric, midwifery and neonatal clinicians in Melbourne and internationally.',
+  now: 'Better-informed delivery decisions could mean fewer preventable stillbirths, fewer brain injuries and fewer unnecessary preterm deliveries. Across a population, that also means real savings for health systems, in neonatal intensive care and in long-term disability care.',
   valuesHeading: 'What guides us',
   values: [
     { name: 'People first', gloss: 'Patients, clinicians and each other. We design with empathy and listen before we build.' },
@@ -59,7 +60,7 @@ export const mission = {
 export const team = {
   heading: 'This is us.',
   intro:
-    'Six people from the University of Melbourne’s BioDesign Innovation program: three biomedical engineers and three MBAs, spanning medical device R&D, clinical practice, commercial law and new-product introduction.',
+    'We are a team of six from the University of Melbourne’s BioDesign Innovation program, with backgrounds in engineering, clinical practice, law and commercialisation. We are working with leading maternal-fetal medicine clinicians in Melbourne and around the world to validate our approach.',
   // Ordered by surname. Degree + one line of strengths each (from Team Overview
   // & Mission). No employers, job titles or past projects.
   members: [
@@ -74,7 +75,7 @@ export const team = {
 
 export const contact = {
   heading: 'Talk to us.',
-  text: 'We welcome conversations with clinicians, researchers, and partners who share the goal of better outcomes for mothers and babies.',
+  text: 'If you’re a clinician, researcher, investor or parent who cares about safer pregnancies, we’d love to hear from you.',
 }
 
 export const footer = {
